@@ -30,6 +30,7 @@ SCOPE = (
 @api_view(["GET"])
 @permission_classes([AllowAny])
 def csrf(request):
+    # get and return CSRF token
     csrf_token = request.META.get("CSRF_COOKIE")
     return Response({"csrftoken": csrf_token})
 
@@ -37,18 +38,21 @@ def csrf(request):
 @api_view(["GET"])
 @permission_classes([AllowAny])
 def authentication_status(request):
+    # check whether or not user is authenticated
     return Response({"authenticated": request.user.is_authenticated})
 
 
 @api_view(["GET"])
 @permission_classes([AllowAny])
 def spotify_login(request):
+    # get spotify profile
     sp_oauth = SpotifyOAuth(
         client_id=CLIENT_ID,
         client_secret=CLIENT_SECRET,
         redirect_uri=REDIRECT_URI,
         scope=SCOPE,
     )
+    # redirect to spotify authentication website
     auth_url = sp_oauth.get_authorize_url()
     return redirect(auth_url)
 
@@ -56,11 +60,13 @@ def spotify_login(request):
 @api_view(["POST"])
 @permission_classes([AllowAny])
 def callback(request, code):
+    # ensure code exists
     if not code:
         return Response(
             {"error": "Missing code parameter"}, status=status.HTTP_400_BAD_REQUEST
         )
 
+    # get spotify profile
     sp_oauth = SpotifyOAuth(
         client_id=CLIENT_ID,
         client_secret=CLIENT_SECRET,
@@ -69,15 +75,19 @@ def callback(request, code):
     )
 
     try:
+        # get access token using code acquired from URL
         token_info = sp_oauth.get_access_token(code)
         access_token = token_info["access_token"]
         if not access_token:
             raise ValueError("Failed to obtain access token")
+
+        # use access token to get spotify profile
         sp = Spotify(auth=access_token)
         profile_data = sp.current_user()
     except Exception as e:
         return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
+    # get id and display name
     spotify_id = profile_data["id"]
     display_name = profile_data.get("display_name", spotify_id)
 
@@ -86,7 +96,10 @@ def callback(request, code):
             username=spotify_id, defaults={"first_name": display_name}
         )
 
+        # now that user account has been made, log in
         login(request, user)
+
+        # get ranked shows using ML algorithm and save to user profile
         user.ranked_show_ids = recommend_route(sp)
         user.save()
     except Exception as e:
@@ -98,6 +111,7 @@ def callback(request, code):
 @api_view(["POST", "DELETE"])
 @permission_classes([IsAuthenticated])
 def dislikes(request, show_id=None):
+    # get authenticated user
     user = request.user
 
     if request.method == "POST":
@@ -106,6 +120,7 @@ def dislikes(request, show_id=None):
                 {"error": "Missing show id"}, status=status.HTTP_400_BAD_REQUEST
             )
 
+        # add the requested show to the disliked list
         if show_id not in user.disliked_ids:
             user.disliked_ids.append(show_id)
             user.save()
@@ -113,6 +128,7 @@ def dislikes(request, show_id=None):
         return Response(status=status.HTTP_201_CREATED)
 
     if request.method == "DELETE":
+        # reset disliked show list
         user.disliked_ids = []
         user.save()
         return Response(status=status.HTTP_204_NO_CONTENT)
@@ -121,11 +137,15 @@ def dislikes(request, show_id=None):
 @api_view(["GET"])
 @permission_classes([IsAuthenticated])
 def top_recommendations(request, top_n=5):
+    # get authenticated user
     user = request.user
     try:
+        # add non disliked shows to list
         ranked_ids = [
             sid for sid in user.ranked_show_ids if sid not in user.disliked_ids
         ]
+
+        # collect top 5 and collect info for each of them
         top_ids = ranked_ids[:top_n]
         shows = collect_show_info(top_ids)
     except Exception as e:

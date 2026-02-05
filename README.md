@@ -33,16 +33,17 @@ A fullstack application that uses SentenceTransformers on a user's Spotify data 
 
 ## Tech Stack
 
-| Tool             | Purpose                                 |
-| ---------------- | --------------------------------------- |
-| **TypeScript**   | Type-safe Javascript                    |
-| **React**        | Modular UI components                   |
-| **Next.js**      | Frontend React framework                |
-| **Python**       | High-level language commonly used in ML |
-| **Django**       | Batteries-included Python backend       |
-| **PostgreSQL**   | Scalable SQL database                   |
-| **SpotifyAPI**   | Spotipy wrapper to collect user data    |
-| **scikit-learn** | ML algorithm and SentenceTransformers   |
+| Tool                      | Purpose                                 |
+| ------------------------- | --------------------------------------- |
+| **TypeScript**            | Type-safe Javascript                    |
+| **React**                 | Modular UI components                   |
+| **Next.js**               | Frontend React framework                |
+| **Python**                | High-level language commonly used in ML |
+| **Django**                | Batteries-included Python backend       |
+| **PostgreSQL**            | Scalable SQL database                   |
+| **SpotifyAPI**            | Spotipy wrapper to collect user data    |
+| **Sentence Transformers** | Semantic text embeddings for NLP        |
+| **scikit-learn**          | Compare vectors using cosine            |
 
 ---
 
